@@ -1,0 +1,11 @@
+CREATE DATABASE cnae_teste;
+
+CREATE TABLE tabela_cnae (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cnae VARCHAR(10),
+    descricao_principal VARCHAR(800),
+    anexo VARCHAR(10),
+    fator_r VARCHAR(10),
+    aliquota VARCHAR(20),
+    contabilizei VARCHAR(255)
+);
