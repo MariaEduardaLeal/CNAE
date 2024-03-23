@@ -22,3 +22,30 @@ def inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, 
 
     # Fechar o cursor
     cursor.close()
+
+def inserir_dados_hierarquia(conexao, cnae, divisao, grupo, classe, subclasse):
+    cursor = conexao.cursor()
+
+    # Verificar se o dado já existe na tabela
+    cursor.execute("SELECT cnae FROM hierarquia_da_atividade WHERE cnae = %s", (cnae,))
+    resultado = cursor.fetchone()
+
+    if resultado:
+        # Atualizar os dados na tabela
+        sql = "UPDATE hierarquia_da_atividade SET divisao = %s, grupo = %s, classe = %s, subclasse = %s WHERE cnae = %s"
+        val = (divisao, grupo, classe, subclasse, cnae)
+        cursor.execute(sql, val)
+        conexao.commit()
+        print(f"Dados do CNAE {cnae} atualizados na tabela de hierarquia_da_atividade com sucesso.")
+    else:
+        # Inserir os dados na tabela
+        sql = "INSERT INTO hierarquia_da_atividade (cnae, divisao, grupo, classe, subclasse) VALUES (%s, %s, %s, %s, %s)"
+        val = (cnae, divisao, grupo, classe, subclasse)
+        cursor.execute(sql, val)
+        conexao.commit()
+        print(f"Dados do CNAE {cnae} inseridos na tabela de hierarquia_da_atividade com sucesso.")
+
+    # Fechar o cursor
+    cursor.close()
+
+
