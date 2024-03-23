@@ -1,0 +1,8 @@
+# Ignorar pasta .vscode
+.vscode/
+
+# Ignorar pasta __pycache__
+__pycache__/
+
+# Ignorar arquivos .sql
+*.sql
