@@ -1,8 +1,10 @@
 def inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei):
     cursor = conexao.cursor()
 
-    # Verificar se o dado já existe na tabela
-    cursor.execute("SELECT cnae FROM tabela_cnae WHERE cnae = %s", (cnae,))
+   # Verificar se os dados já existem no banco de dados
+    sql_select = "SELECT * FROM tabela_cnae WHERE cnae = %s AND aliquota = %s AND anexo = %s"
+    val_select = (cnae, aliquota, anexo)
+    cursor.execute(sql_select, val_select)
     resultado = cursor.fetchone()
 
     if resultado:
