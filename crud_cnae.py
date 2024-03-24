@@ -1,4 +1,4 @@
-def inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei):
+def inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei, link):
     cursor = conexao.cursor()
 
     try:
@@ -17,8 +17,8 @@ def inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, 
             print(f"Dados do CNAE {cnae} atualizados com sucesso.")
         else:
             # Inserir os dados na tabela
-            sql = "INSERT INTO tabela_cnae (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei) VALUES (%s, %s, %s, %s, %s, %s)"
-            val = (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei)
+            sql = "INSERT INTO tabela_cnae (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei, link_hierarquia) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            val = (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei, link)
             cursor.execute(sql, val)
             conexao.commit()
             print(f"Dados do CNAE {cnae} inseridos com sucesso.")
