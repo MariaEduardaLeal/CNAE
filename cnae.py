@@ -4,50 +4,53 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
 from bs4 import BeautifulSoup
+import time
 from conexao import conectar_banco
 from crud_cnae import inserir_dados
 from crud_cnae import inserir_dados_hierarquia
 
-def extrair_informacoes_link(link_completo, cnae, conexao):
-    # Inicializar o navegador Chrome
+MAX_TENTATIVAS = 20
+
+def extrair_informacoes_link_com_tentativa(link_completo, cnae, conexao, tentativas=0):
+    if tentativas >= MAX_TENTATIVAS:
+        print(f"Não foi possível extrair informações do link {link_completo} após {MAX_TENTATIVAS} tentativas.")
+        return
+
     servico = Service(ChromeDriverManager().install())
     navegador = webdriver.Chrome(service=servico)
 
-    # Abrir o link completo
-    navegador.get(link_completo)
+    try:
+        navegador.get(link_completo)
+        WebDriverWait(navegador, 60).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
 
-    WebDriverWait(navegador, 10).until(
-        EC.presence_of_element_located((By.TAG_NAME, 'body'))
-    )
+        time.sleep(7)
 
-    # Obter o conteúdo HTML da página
-    html_content = navegador.page_source
+        html_content = navegador.page_source
+        soup = BeautifulSoup(html_content, 'html.parser')
+        tabela_informacoes = soup.find('table', {'data-v-be12d62c': True})
 
-    # Passar o conteúdo HTML para o BeautifulSoup
-    soup = BeautifulSoup(html_content, 'html.parser')
+        if tabela_informacoes:
+            # Lógica para extrair e inserir informações
+            tbody = tabela_informacoes.find('tbody')
+            if tbody:
+                informacoes = {}
+                for tr in tbody.find_all('tr'):
+                    tipo = tr.find('td', {'class': 'type'}).text.strip()
+                    texto = tr.find('td', {'class': 'text'}).text.strip()
+                    informacoes[tipo] = texto
 
-    # Encontrar a tabela de informações
-    tabela_informacoes = soup.find('table', {'data-v-be12d62c': True})
+                inserir_dados_hierarquia(conexao, cnae, informacoes.get('Divisão', ''), informacoes.get('Grupo', ''), informacoes.get('Classe', ''), informacoes.get('Subclasse', ''))
 
-    if tabela_informacoes:
-        # Extrair as informações do tbody
-        tbody = tabela_informacoes.find('tbody')
-        if tbody:
-            # Extrair as informações específicas
-            informacoes = {}
-            for tr in tbody.find_all('tr'):
-                tipo = tr.find('td', {'class': 'type'}).text.strip()
-                texto = tr.find('td', {'class': 'text'}).text.strip()
-                informacoes[tipo] = texto
+    except NoSuchElementException:
+        print(f"Tentativa {tentativas + 1}: O link {link_completo} demorou demais para responder. Tentando novamente...")
+        extrair_informacoes_link_com_tentativa(link_completo, cnae, conexao, tentativas + 1)
 
-            # Inserir as informações na tabela hierarquia_da_atividade
-            inserir_dados_hierarquia(conexao, cnae, informacoes.get('Divisão', ''), informacoes.get('Grupo', ''), informacoes.get('Classe', ''), informacoes.get('Subclasse', ''))
+    finally:
+        navegador.quit()
 
-    # Fechar o navegador
-    navegador.quit()
 
-# Função principal para extrair e inserir os dados
 def extrair_e_inserir():
     # Inicializar o navegador Chrome
     servico = Service(ChromeDriverManager().install())
@@ -94,7 +97,7 @@ def extrair_e_inserir():
             inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei)
 
             # Extrair e inserir informações do link completo
-            extrair_informacoes_link(link_completo,cnae, conexao)
+            extrair_informacoes_link_com_tentativa(link_completo, cnae, conexao)  # Passando link_completo como parâmetro
 
             # Fechar a conexão
             conexao.close()
