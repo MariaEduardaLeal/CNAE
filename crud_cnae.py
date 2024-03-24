@@ -1,29 +1,36 @@
 def inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei):
     cursor = conexao.cursor()
 
-   # Verificar se os dados já existem no banco de dados
-    sql_select = "SELECT * FROM tabela_cnae WHERE cnae = %s AND aliquota = %s AND anexo = %s"
-    val_select = (cnae, aliquota, anexo)
-    cursor.execute(sql_select, val_select)
-    resultado = cursor.fetchone()
+    try:
+        # Verificar se os dados já existem no banco de dados
+        sql_select = "SELECT * FROM tabela_cnae WHERE cnae = %s AND aliquota = %s AND anexo = %s"
+        val_select = (cnae, aliquota, anexo)
+        cursor.execute(sql_select, val_select)
+        resultado = cursor.fetchone()
 
-    if resultado:
-        # Atualizar os dados na tabela
-        sql = "UPDATE tabela_cnae SET descricao_principal = %s, anexo = %s, fator_r = %s, aliquota = %s, contabilizei = %s WHERE cnae = %s"
-        val = (descricao_principal, anexo, fator_r, aliquota, contabilizei, cnae)
-        cursor.execute(sql, val)
-        conexao.commit()
-        print(f"Dados do CNAE {cnae} atualizados com sucesso.")
-    else:
-        # Inserir os dados na tabela
-        sql = "INSERT INTO tabela_cnae (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei) VALUES (%s, %s, %s, %s, %s, %s)"
-        val = (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei)
-        cursor.execute(sql, val)
-        conexao.commit()
-        print(f"Dados do CNAE {cnae} inseridos com sucesso.")
+        if resultado:
+            # Atualizar os dados na tabela
+            sql = "UPDATE tabela_cnae SET descricao_principal = %s, anexo = %s, fator_r = %s, aliquota = %s, contabilizei = %s WHERE cnae = %s"
+            val = (descricao_principal, anexo, fator_r, aliquota, contabilizei, cnae)
+            cursor.execute(sql, val)
+            conexao.commit()
+            print(f"Dados do CNAE {cnae} atualizados com sucesso.")
+        else:
+            # Inserir os dados na tabela
+            sql = "INSERT INTO tabela_cnae (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei) VALUES (%s, %s, %s, %s, %s, %s)"
+            val = (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei)
+            cursor.execute(sql, val)
+            conexao.commit()
+            print(f"Dados do CNAE {cnae} inseridos com sucesso.")
 
-    # Fechar o cursor
-    cursor.close()
+    except Exception as e:
+        # Tratamento de exceção caso ocorra algum erro durante a execução do SQL
+        print(f"Erro ao inserir/atualizar dados do CNAE {cnae}: {e}")
+
+    finally:
+        # Fechar o cursor
+        cursor.close()
+
 
 def inserir_dados_hierarquia(conexao, cnae, divisao, grupo, classe, subclasse):
     cursor = conexao.cursor()

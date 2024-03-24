@@ -3,20 +3,21 @@ from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
 from bs4 import BeautifulSoup
+from conexao import conectar_banco
+from crud_cnae import inserir_dados
 
-# Verifica a versão do seu google chrome e instala automaticamente o chromedriver correspondente
+
+  # Inicializar o navegador Chrome
 servico = Service(ChromeDriverManager().install())
-
-# Criando instância do CHROMEDRIVER passando o chromedriver instalado automaticamente
 navegador = webdriver.Chrome(service=servico)
 
-# Abre a página desejada
+# Abrir a página desejada
 navegador.get("https://www.contabilizei.com.br/contabilidade-online/cnae/")
 
-# Obtendo o conteúdo HTML da página
+# Obter o conteúdo HTML da página
 html_content = navegador.page_source
 
-# Passando o conteúdo HTML para o BeautifulSoup
+# Passar o conteúdo HTML para o BeautifulSoup
 soup = BeautifulSoup(html_content, 'html.parser')
 
 elemento_com_id = soup.find(id="tableCNAE")
@@ -24,20 +25,34 @@ elemento_com_id = soup.find(id="tableCNAE")
 # Encontrando todas as linhas (<tr>) dentro do elemento com o ID
 linhas_da_tabela = elemento_com_id.find_all('tr')
 
-contador = 0
-
-# Iterando sobre as linhas da tabela e imprimindo os dados
+# Iterar sobre as linhas da tabela
 for linha in linhas_da_tabela:
-    contador += 1  # Incrementa o contador em 1
-    dados = linha.find_all('td')  # Encontrando todas as células da linha
-    for dado in dados:
-        print(dado.text.strip(), end=' ')  # Imprimindo o texto de cada célula
-    print()  # Nova linha para separar cada linha da tabela
+    # Encontrar todas as células (<td>) na linha
+    dados = linha.find_all('td')
 
-print('Contador: ', contador)
+    # Verificar se há dados suficientes
+    if len(dados) >= 6:
+        # Extrair os valores de cada célula
+        cnae = dados[0].text.strip()
+        descricao_principal = dados[1].text.strip()
+        anexo = dados[2].text.strip()
+        fator_r = dados[3].text.strip()
+        aliquota = dados[4].text.strip()
+        contabilizei = dados[5].text.strip()
 
-# Aguardando a entrada do usuário para fechar o navegador
-input("Pressione Enter para fechar o navegador...")
+        # Extrair o link completo da primeira célula (<td>) - código CNAE
+        link_cnae = dados[0].find('a')['href']
+        link_completo = f"https://www.contabilizei.com.br{link_cnae}"
+        print("Link cane: ", link_completo)
 
-# Fechando o navegador
+        # Conectar ao banco de dados
+        conexao = conectar_banco()
+
+        # Inserir dados na tabela
+        inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei)
+
+        # Fechar a conexão
+        conexao.close()
+
+# Fechar o navegador
 navegador.quit()

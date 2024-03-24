@@ -11,37 +11,36 @@ from conexao import conectar_banco
 from crud_cnae import inserir_dados
 from crud_cnae import inserir_dados_hierarquia
 
-MAX_TENTATIVAS = 20
-
 def extrair_informacoes_link_com_tentativa(link_completo, cnae, conexao, tentativas=0):
-    if tentativas >= MAX_TENTATIVAS:
-        print(f"Não foi possível extrair informações do link {link_completo} após {MAX_TENTATIVAS} tentativas.")
-        return
-
     servico = Service(ChromeDriverManager().install())
     navegador = webdriver.Chrome(service=servico)
 
     try:
         navegador.get(link_completo)
-        WebDriverWait(navegador, 60).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+        WebDriverWait(navegador, 30).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
 
-        time.sleep(7)
-
+        # Extrair HTML da página após aguardar
         html_content = navegador.page_source
+
+        # Passar o conteúdo HTML para o BeautifulSoup
         soup = BeautifulSoup(html_content, 'html.parser')
-        tabela_informacoes = soup.find('table', {'data-v-be12d62c': True})
 
-        if tabela_informacoes:
-            # Lógica para extrair e inserir informações
-            tbody = tabela_informacoes.find('tbody')
-            if tbody:
-                informacoes = {}
-                for tr in tbody.find_all('tr'):
-                    tipo = tr.find('td', {'class': 'type'}).text.strip()
-                    texto = tr.find('td', {'class': 'text'}).text.strip()
-                    informacoes[tipo] = texto
+        # Tentar encontrar o elemento tbody usando BeautifulSoup
+        tbody = soup.find('tbody', id='hierarchy-body')
 
-                inserir_dados_hierarquia(conexao, cnae, informacoes.get('Divisão', ''), informacoes.get('Grupo', ''), informacoes.get('Classe', ''), informacoes.get('Subclasse', ''))
+        if not tbody:
+            print(f"Tentativa {tentativas + 1}: Elemento tbody não encontrado. Tentando novamente...")
+            extrair_informacoes_link_com_tentativa(link_completo, cnae, conexao, tentativas + 1)
+            return  # Saia da função atual se a chamada recursiva for feita
+
+        # Se o tbody for encontrado, continue com a lógica para extrair e inserir informações
+        informacoes = {}
+        for tr in tbody.find_all('tr'):
+            tipo = tr.find('td', class_='type').text.strip()
+            texto = tr.find('td', class_='text').text.strip()
+            informacoes[tipo] = texto
+
+        inserir_dados_hierarquia(conexao, cnae, informacoes.get('Divisão', ''), informacoes.get('Grupo', ''), informacoes.get('Classe', ''), informacoes.get('Subclasse', ''))
 
     except NoSuchElementException:
         print(f"Tentativa {tentativas + 1}: O link {link_completo} demorou demais para responder. Tentando novamente...")
@@ -49,7 +48,6 @@ def extrair_informacoes_link_com_tentativa(link_completo, cnae, conexao, tentati
 
     finally:
         navegador.quit()
-
 
 def extrair_e_inserir():
     # Inicializar o navegador Chrome
