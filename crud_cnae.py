@@ -2,19 +2,15 @@ def inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, 
     cursor = conexao.cursor()
 
     try:
-        # Verificar se os dados já existem no banco de dados
-        sql_select = "SELECT * FROM tabela_cnae WHERE cnae = %s AND aliquota = %s AND anexo = %s"
-        val_select = (cnae, aliquota, anexo)
+        # Verificar se os dados já existem no banco de dados com os mesmos valores
+        sql_select = "SELECT * FROM tabela_cnae WHERE cnae = %s AND descricao_principal = %s AND anexo = %s AND fator_r = %s AND aliquota = %s AND contabilizei = %s"
+        val_select = (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei)
         cursor.execute(sql_select, val_select)
         resultado = cursor.fetchone()
 
         if resultado:
-            # Atualizar os dados na tabela
-            sql = "UPDATE tabela_cnae SET descricao_principal = %s, anexo = %s, fator_r = %s, aliquota = %s, contabilizei = %s WHERE cnae = %s"
-            val = (descricao_principal, anexo, fator_r, aliquota, contabilizei, cnae)
-            cursor.execute(sql, val)
-            conexao.commit()
-            print(f"Dados do CNAE {cnae} atualizados com sucesso.")
+            # Já existe um registro com os mesmos valores, não há necessidade de atualização
+            print(f"Dados do CNAE {cnae} já estão iguais, não houve alteração.")
         else:
             # Inserir os dados na tabela
             sql = "INSERT INTO tabela_cnae (cnae, descricao_principal, anexo, fator_r, aliquota, contabilizei, link_hierarquia) VALUES (%s, %s, %s, %s, %s, %s, %s)"
@@ -25,7 +21,7 @@ def inserir_dados(conexao, cnae, descricao_principal, anexo, fator_r, aliquota, 
 
     except Exception as e:
         # Tratamento de exceção caso ocorra algum erro durante a execução do SQL
-        print(f"Erro ao inserir/atualizar dados do CNAE {cnae}: {e}")
+        print(f"Erro ao inserir dados do CNAE {cnae}: {e}")
 
     finally:
         # Fechar o cursor
