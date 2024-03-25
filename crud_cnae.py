@@ -57,4 +57,9 @@ def inserir_dados_hierarquia(conexao, cnae, divisao, grupo, classe, subclasse):
     # Fechar o cursor
     cursor.close()
 
-
+def retornar_links_hierarquia(conexao):
+    cursor = conexao.cursor()
+    cursor.execute("SELECT cnae, link_hierarquia FROM tabela_cnae")
+    # Recuperar os resultados
+    resultados = cursor.fetchall()
+    return resultados
